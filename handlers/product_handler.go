@@ -25,17 +25,18 @@ func (h *ProductHandler) GetProduct(c *fiber.Ctx) error {
 	}
 	return c.JSON(product)
 }
+
 func (h *ProductHandler) CreateProduct(c *fiber.Ctx) error {
 	product := new(models.Product)
 	if err := c.BodyParser(product); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Cannot parse JSON",
+			"error": "Cannot parse JSON " + err.Error(),
 		})
 	}
 	log.Println(product)
 	if err := h.repo.CreateProduct(c.Context(), product); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to create product",
+			"error": "Failed to create product " + err.Error(),
 		})
 	}
 	return c.Status(fiber.StatusCreated).JSON(product)

@@ -2,7 +2,7 @@ package repository
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
@@ -32,14 +32,19 @@ func (r *productRepository) GetProductByID(ctx context.Context, id string) (*mod
 	result, err := r.db.GetItem(ctx, &dynamodb.GetItemInput{
 		TableName: aws.String("Products"),
 		Key: map[string]types.AttributeValue{
-			"id": &types.AttributeValueMemberS{Value: id},
+			"Id": &types.AttributeValueMemberS{Value: id},
 		},
 	})
 	if err != nil {
+		log.Println("Error getting product " + err.Error())
 		return nil, err
 	}
 
 	var product models.Product
+	log.Println(result.Item)
+	if len(result.Item) == 0 {
+		return nil, errors.New("no product found")
+	}
 	err = attributevalue.UnmarshalMap(result.Item, &product)
 	if err != nil {
 		return nil, err
@@ -59,12 +64,10 @@ func (r *productRepository) CreateProduct(ctx context.Context, product *models.P
 		TableName: aws.String("Products"),
 		Item:      item,
 	})
-	error := fmt.Errorf("failed to put item in DynamoDB: %w", err)
-	fmt.Println(error.Error())
 	return err
 }
 
 func (r *productRepository) UpdateProduct(ctx context.Context, id string, product *models.Product) error {
-	product.ID = id // Ensure the product ID is set to the provided ID
+	product.Id = id // Ensure the product ID is set to the provided ID
 	return r.CreateProduct(ctx, product)
 }
