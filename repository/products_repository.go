@@ -30,7 +30,7 @@ func NewProductRepository() ProductRepository {
 
 func (r *productRepository) GetProductByID(ctx context.Context, id string) (*models.Product, error) {
 	result, err := r.db.GetItem(ctx, &dynamodb.GetItemInput{
-		TableName: aws.String("Products"),
+		TableName: aws.String("goservice_products_table"),
 		Key: map[string]types.AttributeValue{
 			"Id": &types.AttributeValueMemberS{Value: id},
 		},
@@ -61,7 +61,7 @@ func (r *productRepository) CreateProduct(ctx context.Context, product *models.P
 	}
 
 	_, err = r.db.PutItem(ctx, &dynamodb.PutItemInput{
-		TableName: aws.String("Products"),
+		TableName: aws.String("goservice_products_table"),
 		Item:      item,
 	})
 	return err

@@ -42,7 +42,7 @@ func InitDynamo() {
 		}
 	} else {
 		fmt.Println("we really getting here?")
-		cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion("us-west-2"))
+		cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(region))
 		if err != nil {
 			log.Fatalf("unable to load SDK config, %v", err)
 		}
