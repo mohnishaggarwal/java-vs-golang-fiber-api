@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
@@ -13,9 +14,9 @@ import (
 )
 
 type ProductRepository interface {
-	GetProductByID(ctx context.Context, id string) (*models.Product, error)
-	CreateProduct(ctx context.Context, product *models.Product) error
-	UpdateProduct(ctx context.Context, id string, product *models.Product) error
+	GetProductByID(ctx context.Context, id string) (*models.ProductOutput, error)
+	CreateProduct(ctx context.Context, product *models.Product) (string, error)
+	UpdateProduct(ctx context.Context, id string, product *models.Product) (string, error)
 }
 
 type productRepository struct {
@@ -28,7 +29,7 @@ func NewProductRepository() ProductRepository {
 	}
 }
 
-func (r *productRepository) GetProductByID(ctx context.Context, id string) (*models.Product, error) {
+func (r *productRepository) GetProductByID(ctx context.Context, id string) (*models.ProductOutput, error) {
 	result, err := r.db.GetItem(ctx, &dynamodb.GetItemInput{
 		TableName: aws.String("goservice_products_table"),
 		Key: map[string]types.AttributeValue{
@@ -41,33 +42,60 @@ func (r *productRepository) GetProductByID(ctx context.Context, id string) (*mod
 	}
 
 	var product models.Product
-	log.Println(result.Item)
 	if len(result.Item) == 0 {
-		return nil, errors.New("no product found")
+		return nil, errors.New("product not found")
 	}
 	err = attributevalue.UnmarshalMap(result.Item, &product)
 	if err != nil {
 		return nil, err
 	}
 
-	return &product, nil
+	return transformProduct(&product), nil
 }
 
-func (r *productRepository) CreateProduct(ctx context.Context, product *models.Product) error {
+func (r *productRepository) CreateProduct(ctx context.Context, product *models.Product) (string, error) {
 	item, err := attributevalue.MarshalMap(product)
 	if err != nil {
 		log.Println("Did we fail to unwrap?")
-		return err
+		return "", err
 	}
 
 	_, err = r.db.PutItem(ctx, &dynamodb.PutItemInput{
 		TableName: aws.String("goservice_products_table"),
 		Item:      item,
 	})
-	return err
+	if err != nil {
+		return "", err
+	}
+	return "Product added successfully", nil
 }
 
-func (r *productRepository) UpdateProduct(ctx context.Context, id string, product *models.Product) error {
+func (r *productRepository) UpdateProduct(ctx context.Context, id string, product *models.Product) (string, error) {
 	product.Id = id // Ensure the product ID is set to the provided ID
-	return r.CreateProduct(ctx, product)
+	_, err := r.CreateProduct(ctx, product)
+	if err != nil {
+		return "", err
+	} else {
+		return "Product updated successfully", err
+	}
+}
+
+func transformProduct(product *models.Product) *models.ProductOutput {
+	expenseCategory := getExpenseCasegory(product.Price)
+	url := fmt.Sprintf("https://example.com/product/%s", product.Id)
+	return &models.ProductOutput{
+		Product:         product,
+		Url:             url,
+		ExpenseCategory: expenseCategory,
+	}
+}
+
+func getExpenseCasegory(price float32) models.ExpenseCategory {
+	if price < 10 {
+		return models.VeryCheap
+	} else if price < 100 {
+		return models.Cheap
+	} else {
+		return models.Expensive
+	}
 }

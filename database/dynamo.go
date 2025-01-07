@@ -28,6 +28,8 @@ func InitDynamo() {
 			BaseEndpoint: aws.String(endpoint),
 		})
 
+		// With the deprecated of endpointResolver, had a lot of problems getting the application to recognize the locally
+		// spun up Dynamo table. Therefore, just creating it in code.
 		tableName := "Products"
 		if !DoesTableExist(&tableName) {
 			err := CreateDynamoTable(&tableName)

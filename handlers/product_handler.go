@@ -17,13 +17,13 @@ func NewProductHandler(repo repository.ProductRepository) *ProductHandler {
 
 func (h *ProductHandler) GetProduct(c *fiber.Ctx) error {
 	id := c.Params("id")
-	product, err := h.repo.GetProductByID(c.Context(), id)
+	productOutput, err := h.repo.GetProductByID(c.Context(), id)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "Product not found",
 		})
 	}
-	return c.JSON(product)
+	return c.JSON(productOutput)
 }
 
 func (h *ProductHandler) CreateProduct(c *fiber.Ctx) error {
@@ -34,12 +34,12 @@ func (h *ProductHandler) CreateProduct(c *fiber.Ctx) error {
 		})
 	}
 	log.Println(product)
-	if err := h.repo.CreateProduct(c.Context(), product); err != nil {
+	if _, err := h.repo.CreateProduct(c.Context(), product); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to create product " + err.Error(),
 		})
 	}
-	return c.Status(fiber.StatusCreated).JSON(product)
+	return c.Status(fiber.StatusCreated).SendString("Product added successfully")
 }
 
 func (h *ProductHandler) UpdateProduct(c *fiber.Ctx) error {
@@ -50,10 +50,10 @@ func (h *ProductHandler) UpdateProduct(c *fiber.Ctx) error {
 			"error": "Cannot parse JSON",
 		})
 	}
-	if err := h.repo.UpdateProduct(c.Context(), id, product); err != nil {
+	if _, err := h.repo.UpdateProduct(c.Context(), id, product); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to update product",
 		})
 	}
-	return c.JSON(product)
+	return c.Status(fiber.StatusOK).SendString("Product updated successfully")
 }
