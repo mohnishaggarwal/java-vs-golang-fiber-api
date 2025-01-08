@@ -4,7 +4,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/mohnishaggarwal/products/models"
 	"github.com/mohnishaggarwal/products/repository"
-	"log"
 )
 
 type ProductHandler struct {
@@ -33,7 +32,6 @@ func (h *ProductHandler) CreateProduct(c *fiber.Ctx) error {
 			"error": "Cannot parse JSON " + err.Error(),
 		})
 	}
-	log.Println(product)
 	if _, err := h.repo.CreateProduct(c.Context(), product); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to create product " + err.Error(),
